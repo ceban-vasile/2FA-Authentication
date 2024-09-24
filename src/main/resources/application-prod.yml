@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres.railway.internal:5432/railway
+    username: postgres
+    password: DeQnahIvfdEHjwjKOGPySsLaBBMogZLE
+    name: spring-blog
+
+  sql:
+    init:
+      mode: always
