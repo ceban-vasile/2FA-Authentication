@@ -26,7 +26,7 @@ public class TOTPController {
 
     public TOTPController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
-        this.jwtUtil = jwtUtil;
+        this.jwtUtil =jwtUtil;
     }
 
     @PostMapping(value = "/users")
@@ -39,14 +39,10 @@ public class TOTPController {
         String otpProtocol = userService.generateOTPProtocol(savedUser.getEmail());
         String qrCode = userService.generateQRCode(otpProtocol);
 
-        // Generate JWT token after successful signup
-        String token = jwtUtil.generateToken(savedUser.getEmail());
-
-        // Return user, QR code, and token
+        // Return both the user and the QR code
         Map<String, Object> response = new HashMap<>();
         response.put("user", savedUser);
         response.put("qrCode", qrCode);
-        response.put("token", token);
 
         return response;
     }
@@ -56,21 +52,30 @@ public class TOTPController {
         Optional<User> userOpt = userService.authenticate(user.getEmail(), user.getPassword());
 
         if (userOpt.isPresent()) {
-            String token = jwtUtil.generateToken(userOpt.get().getEmail());
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Login Successful");
-            response.put("token", token);
-
-            return ResponseEntity.ok(response);
+            // Generate a token or return user details as needed
+            return ResponseEntity.ok("Login Successful"); // Replace with your token generation
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
 
     @PostMapping(value = "/qrcode/validate/{email}")
-    public boolean validateTotp(@PathVariable("email") String email, @RequestBody String requestJson) {
+    public ResponseEntity<?> validateTotp(@PathVariable("email") String email, @RequestBody String requestJson) {
         JSONObject json = new JSONObject(requestJson);
-        return userService.validateTotp(email, Integer.parseInt(json.getString("totpKey")));
+        int totpKey = Integer.parseInt(json.getString("totpKey"));
+
+        boolean isValidTotp = userService.validateTotp(email, totpKey);
+
+        if (isValidTotp) {
+            String token = jwtUtil.generateToken(email);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "2FA Verified");
+            response.put("token", token);
+
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid 2FA code");
+        }
     }
 
 }
