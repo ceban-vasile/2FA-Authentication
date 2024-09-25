@@ -1,7 +1,5 @@
 package com.example.demo.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -14,6 +12,8 @@ import org.springframework.util.StringUtils;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
+
 import com.example.demo.security.TOTPAuthenticator;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.model.User;
@@ -30,22 +30,39 @@ public class UserService {
 
     @Autowired
     private Environment env;
-
-    @Bean
-    private PasswordEncoder encoder() {
-        return new BCryptPasswordEncoder();
-    }
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public User createUser(User user) {
-        user.setPassword(encoder().encode(user.getPassword()));
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setSecret(totpAuthenticator.generateSecret());
         return userRepository.save(user);
     }
 
+    public Optional<User> authenticate(String email, String password) {
+        Optional<User> userOpt = Optional.ofNullable(userRepository.findByEmail(email));
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Compare the encrypted password with the raw password
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                return userOpt;
+            }
+        }
+        return Optional.empty();
+    }
+
     public String generateOTPProtocol(String email) {
         User user = userRepository.findByEmail(email);
-        return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s", email, email + "@domain.com", user.getSecret(),env.getRequiredProperty("app.application.name"));
+
+        // Generate the otpauth URI
+        String issuer = env.getRequiredProperty("spring.application.name");
+        return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s",
+                issuer,      // Issuer name in the label
+                email,       // Email for easy identification
+                user.getSecret(),  // The user's TOTP secret
+                issuer);     // Issuer name in the query param
     }
+
 
     public String generateQRCode(String otpProtocol) throws Throwable {
         return totpAuthenticator.generateQRCode(otpProtocol);
@@ -57,7 +74,7 @@ public class UserService {
         if (StringUtils.hasText(secret)) {
             if (totpKey != null) {
                 try {
-                    if (!totpAuthenticator.verifyCode(secret, totpKey, Integer.parseInt(env.getRequiredProperty("2fa.application.time")))) {
+                    if (!totpAuthenticator.verifyCode(secret, totpKey, Integer.parseInt(env.getRequiredProperty("spring.application.time")))) {
                         System.out.printf("Code %d was not valid", totpKey);
                         throw new BadCredentialsException(
                                 "Invalid TOTP code");
