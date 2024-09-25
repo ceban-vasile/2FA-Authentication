@@ -44,8 +44,16 @@ public class UserService {
 
     public String generateOTPProtocol(String email) {
         User user = userRepository.findByEmail(email);
-        return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s", email, email + "@domain.com", user.getSecret(),env.getRequiredProperty("app.application.name"));
+
+        // Generate the otpauth URI
+        String issuer = env.getRequiredProperty("spring.application.name");
+        return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s",
+                issuer,      // Issuer name in the label
+                email,       // Email for easy identification
+                user.getSecret(),  // The user's TOTP secret
+                issuer);     // Issuer name in the query param
     }
+
 
     public String generateQRCode(String otpProtocol) throws Throwable {
         return totpAuthenticator.generateQRCode(otpProtocol);
