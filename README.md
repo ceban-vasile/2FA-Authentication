@@ -1,5 +1,4 @@
 Railway
-
 spring_profiles_active=prod
 PROD_DB_HOST=postgres.railway.internal
 PROD_DB_PORT=5432
