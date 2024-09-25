@@ -35,11 +35,9 @@ public class TOTPController {
         User savedUser = userService.createUser(user);
         savedUser.setPassword("");  // Clear password for security
 
-        // Generate OTP protocol for QR Code
         String otpProtocol = userService.generateOTPProtocol(savedUser.getEmail());
         String qrCode = userService.generateQRCode(otpProtocol);
 
-        // Return both the user and the QR code
         Map<String, Object> response = new HashMap<>();
         response.put("user", savedUser);
         response.put("qrCode", qrCode);
@@ -52,8 +50,7 @@ public class TOTPController {
         Optional<User> userOpt = userService.authenticate(user.getEmail(), user.getPassword());
 
         if (userOpt.isPresent()) {
-            // Generate a token or return user details as needed
-            return ResponseEntity.ok("Login Successful"); // Replace with your token generation
+            return ResponseEntity.ok("Login Successful");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
