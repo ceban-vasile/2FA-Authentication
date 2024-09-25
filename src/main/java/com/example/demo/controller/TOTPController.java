@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.service.JwtUtil;
 import jakarta.validation.Valid;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +21,12 @@ public class TOTPController {
 
     @Autowired
     private final UserService userService;
+    @Autowired
+    private final JwtUtil jwtUtil;
 
-    public TOTPController(UserService userService) {
+    public TOTPController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping(value = "/users")
@@ -35,10 +39,14 @@ public class TOTPController {
         String otpProtocol = userService.generateOTPProtocol(savedUser.getEmail());
         String qrCode = userService.generateQRCode(otpProtocol);
 
-        // Return both the user and the QR code
+        // Generate JWT token after successful signup
+        String token = jwtUtil.generateToken(savedUser.getEmail());
+
+        // Return user, QR code, and token
         Map<String, Object> response = new HashMap<>();
         response.put("user", savedUser);
         response.put("qrCode", qrCode);
+        response.put("token", token);
 
         return response;
     }
@@ -48,8 +56,12 @@ public class TOTPController {
         Optional<User> userOpt = userService.authenticate(user.getEmail(), user.getPassword());
 
         if (userOpt.isPresent()) {
-            // Generate a token or return user details as needed
-            return ResponseEntity.ok("Login Successful"); // Replace with your token generation
+            String token = jwtUtil.generateToken(userOpt.get().getEmail());
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Login Successful");
+            response.put("token", token);
+
+            return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
