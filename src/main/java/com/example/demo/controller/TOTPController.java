@@ -6,13 +6,16 @@ import com.example.demo.model.User;
 import com.example.demo.service.JwtUtil;
 import com.example.demo.service.UserService;
 import com.example.demo.service.TOTPService;
+import com.google.zxing.WriterException;
 import jakarta.validation.Valid;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +34,7 @@ public class TOTPController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<Map<String, Object>> createUser(@RequestBody @Valid User user) {
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody @Valid User user) throws IOException, WriterException {
         User savedUser = userService.createUser(user);
 
         String otpProtocol = totpService.generateOTPProtocol(savedUser);
@@ -52,7 +55,7 @@ public class TOTPController {
     }
 
     @PostMapping("/totp/validate")
-    public ResponseEntity<?> validateTotp(@RequestBody String requestJson) throws UserNotFoundException {
+    public ResponseEntity<?> validateTotp(@RequestBody String requestJson) throws UserNotFoundException, NoSuchAlgorithmException, InvalidKeyException {
         JSONObject request = new JSONObject(requestJson);
         String email = request.getString("email");
         int totpKey = Integer.parseInt(request.getString("totpKey"));
@@ -74,13 +77,9 @@ public class TOTPController {
 
     @PostMapping("/tokens/validate")
     public ResponseEntity<?> validateJwt(@RequestBody String requestJson) {
-        try {
-            JSONObject request = new JSONObject(requestJson);
-            String token = request.getString("token");
-            jwtUtil.validateToken(token);
-            return ResponseEntity.ok("JWT is valid.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT");
-        }
+        JSONObject request = new JSONObject(requestJson);
+        String token = request.getString("token");
+        jwtUtil.validateToken(token);
+        return ResponseEntity.ok("JWT is valid.");
     }
 }

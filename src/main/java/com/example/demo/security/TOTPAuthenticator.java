@@ -1,5 +1,7 @@
 package com.example.demo.security;
+
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -53,15 +56,11 @@ public class TOTPAuthenticator {
         return new String(new Base32().encode(buffer));
     }
 
-    public String generateQRCode(String otpProtocol) throws Throwable {
-        try {
-            QRCodeWriter writer = new QRCodeWriter();
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            BitMatrix matrix = writer.encode(otpProtocol, BarcodeFormat.QR_CODE, 250, 250);
-            MatrixToImageWriter.writeToStream(matrix, "PNG", byteArrayOutputStream);
-            return new String(Base64.getEncoder().encode(byteArrayOutputStream.toByteArray()));
-        } catch (Exception e) {
-            throw new Throwable(e);
-        }
+    public String generateQRCode(String otpProtocol) throws WriterException, IOException {
+        QRCodeWriter writer = new QRCodeWriter();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        BitMatrix matrix = writer.encode(otpProtocol, BarcodeFormat.QR_CODE, 250, 250);
+        MatrixToImageWriter.writeToStream(matrix, "PNG", byteArrayOutputStream);
+        return new String(Base64.getEncoder().encode(byteArrayOutputStream.toByteArray()));
     }
 }
