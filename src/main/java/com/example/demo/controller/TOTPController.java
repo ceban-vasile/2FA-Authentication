@@ -2,54 +2,52 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.UserDTO;
 import com.example.demo.exception.UserNotFoundException;
+import com.example.demo.model.User;
 import com.example.demo.service.JwtUtil;
+import com.example.demo.service.UserService;
+import com.example.demo.service.TOTPService;
 import jakarta.validation.Valid;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
-
-import com.example.demo.model.User;
-import com.example.demo.service.UserService;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/2fa")
 public class TOTPController {
 
-    @Autowired
     private final UserService userService;
-    @Autowired
+    private final TOTPService totpService;
     private final JwtUtil jwtUtil;
 
-    public TOTPController(UserService userService, JwtUtil jwtUtil) {
+    public TOTPController(UserService userService, TOTPService totpService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.totpService = totpService;
         this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/users")
-    public @ResponseBody
-    Map<String, Object> createUser(@RequestBody User user) throws Throwable {
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody @Valid User user) {
         User savedUser = userService.createUser(user);
 
-        String otpProtocol = userService.generateOTPProtocol(savedUser.getEmail());
-        String qrCode = userService.generateQRCode(otpProtocol);
+        String otpProtocol = totpService.generateOTPProtocol(savedUser);
+        String qrCode = totpService.generateQRCode(otpProtocol);
 
         Map<String, Object> response = new HashMap<>();
         UserDTO userDTO = new UserDTO(savedUser.getEmail());
         response.put("user", userDTO);
         response.put("qrCode", qrCode);
 
-        return response;
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/users/authenticate")
-    public ResponseEntity<?> login(@RequestBody User user) {
-        userService.authenticate(user.getEmail(), user.getPassword());
+    public ResponseEntity<?> login(@RequestBody @Valid User user) throws UserNotFoundException {
+        User authenticatedUser = userService.authenticateUser(user.getEmail(), user.getPassword());
         return ResponseEntity.ok("Login Successful");
     }
 
@@ -59,7 +57,8 @@ public class TOTPController {
         String email = request.getString("email");
         int totpKey = Integer.parseInt(request.getString("totpKey"));
 
-        boolean isValidTotp = userService.validateTotp(email, totpKey);
+        User user = userService.getUserByEmail(email);
+        boolean isValidTotp = totpService.validateTotp(user, totpKey);
 
         if (isValidTotp) {
             String token = jwtUtil.generateToken(email);
@@ -75,10 +74,13 @@ public class TOTPController {
 
     @PostMapping("/tokens/validate")
     public ResponseEntity<?> validateJwt(@RequestBody String requestJson) {
-        JSONObject request = new JSONObject(requestJson);
-        String token = request.getString("token");
-        System.out.println(token);
-        jwtUtil.validateToken(token);
-        return ResponseEntity.ok("JWT is valid.");
+        try {
+            JSONObject request = new JSONObject(requestJson);
+            String token = request.getString("token");
+            jwtUtil.validateToken(token);
+            return ResponseEntity.ok("JWT is valid.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT");
+        }
     }
 }
