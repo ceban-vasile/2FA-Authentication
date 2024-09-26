@@ -64,10 +64,12 @@ public class TOTPController {
         boolean isValidTotp = totpService.validateTotp(user, totpKey);
 
         if (isValidTotp) {
-            String token = jwtUtil.generateToken(email);
+            String accessToken = jwtUtil.generateAccessToken(email);
+            String refreshToken = jwtUtil.generateRefreshToken(email);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "2FA Verified");
-            response.put("token", token);
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", refreshToken);
 
             return ResponseEntity.ok(response);
         } else {
@@ -79,7 +81,19 @@ public class TOTPController {
     public ResponseEntity<?> validateJwt(@RequestBody String requestJson) {
         JSONObject request = new JSONObject(requestJson);
         String token = request.getString("token");
-        jwtUtil.validateToken(token);
+        jwtUtil.validateAccessToken(token);
         return ResponseEntity.ok("JWT is valid.");
+    }
+
+    @PostMapping("/tokens/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody String requestJson) {
+        JSONObject request = new JSONObject(requestJson);
+        String refreshToken = request.getString("refreshToken");
+
+        String newAccessToken = jwtUtil.refreshAccessToken(refreshToken);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("accessToken", newAccessToken);
+        return ResponseEntity.ok(response);
     }
 }

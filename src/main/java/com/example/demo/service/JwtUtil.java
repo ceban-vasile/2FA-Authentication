@@ -18,25 +18,28 @@ import java.util.Map;
 @Slf4j
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
-    private String secretString;
+    @Value("${jwt.access-token.secret}")
+    private String accessSecretString;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpirationInMs;
+    @Value("${jwt.refresh-token.secret}")
+    private String refreshSecretString;
 
-    private SecretKey jwtSecret;
+    @Value("${jwt.access-token.expiration}")
+    private long accessTokenExpiration;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private long refreshTokenExpiration;
+
+    private SecretKey accessJwtSecret;
+    private SecretKey refreshJwtSecret;
 
     @PostConstruct
     public void init() {
-        this.jwtSecret = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
+        this.accessJwtSecret = Keys.hmacShaKeyFor(accessSecretString.getBytes(StandardCharsets.UTF_8));
+        this.refreshJwtSecret = Keys.hmacShaKeyFor(refreshSecretString.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email);
-    }
-
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, long jwtExpirationInMs, SecretKey jwtSecret) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
@@ -49,7 +52,36 @@ public class JwtUtil {
                 .compact();
     }
 
-    public void validateToken(String authToken) throws SignatureException, MalformedJwtException, ExpiredJwtException, UnsupportedJwtException, IllegalArgumentException {
-        Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
+    public void validateAccessToken(String authToken) {
+        Jwts.parser().setSigningKey(accessJwtSecret).parseClaimsJws(authToken);
+    }
+
+    public void validateRefreshToken(String authToken) {
+        Jwts.parser().setSigningKey(refreshJwtSecret).parseClaimsJws(authToken);
+    }
+
+    public String generateAccessToken(String email) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, email, accessTokenExpiration, accessJwtSecret);
+    }
+
+    public String generateRefreshToken(String email) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, email, refreshTokenExpiration, refreshJwtSecret);
+    }
+
+    public String refreshAccessToken(String refreshToken) {
+        validateRefreshToken(refreshToken);
+        String email = getEmailFromRefreshToken(refreshToken);
+        return generateAccessToken(email);
+    }
+
+    public String getEmailFromRefreshToken(String refreshToken) {
+        // Extract email or subject from refresh token
+        return Jwts.parser()
+                .setSigningKey(refreshJwtSecret)
+                .parseClaimsJws(refreshToken)
+                .getBody()
+                .getSubject();
     }
 }
