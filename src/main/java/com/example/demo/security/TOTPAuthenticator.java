@@ -18,8 +18,7 @@ import java.util.Base64;
 @Component
 public class TOTPAuthenticator {
 
-    public boolean verifyCode(String secret, int code, int variance)
-            throws InvalidKeyException, NoSuchAlgorithmException {
+    public boolean verifyCode(String secret, int code, int variance) throws InvalidKeyException, NoSuchAlgorithmException {
         long timeIndex = System.currentTimeMillis() / 1000 / 30;
         byte[] secretBytes = new Base32().decode(secret);
         for (int i = -variance; i <= variance; i++) {
@@ -31,8 +30,7 @@ public class TOTPAuthenticator {
         return false;
     }
 
-    private long getCode(byte[] secret, long timeIndex)
-            throws NoSuchAlgorithmException, InvalidKeyException {
+    private long getCode(byte[] secret, long timeIndex) throws NoSuchAlgorithmException, InvalidKeyException {
         SecretKeySpec signKey = new SecretKeySpec(secret, "HmacSHA1");
         ByteBuffer buffer = ByteBuffer.allocate(8);
         buffer.putLong(timeIndex);

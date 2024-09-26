@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/2fa")
+@RequestMapping("/api/2fa")
 public class TOTPController {
 
     @Autowired
@@ -29,7 +29,7 @@ public class TOTPController {
         this.jwtUtil = jwtUtil;
     }
 
-    @PostMapping(value = "/users")
+    @PostMapping("/users")
     public @ResponseBody
     Map<String, Object> createUser(@RequestBody User user) throws Throwable {
         User savedUser = userService.createUser(user);
@@ -45,21 +45,18 @@ public class TOTPController {
         return response;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/users/authenticate")
     public ResponseEntity<?> login(@RequestBody User user) {
         Optional<User> userOpt = userService.authenticate(user.getEmail(), user.getPassword());
-
-        if (userOpt.isPresent()) {
-            return ResponseEntity.ok("Login Successful");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-        }
+        return userOpt.isPresent()
+                ? ResponseEntity.ok("Login Successful")
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
 
-    @PostMapping(value = "/qrcode/validate/{email}")
-    public ResponseEntity<?> validateTotp(@PathVariable("email") String email, @RequestBody String requestJson) {
-        JSONObject json = new JSONObject(requestJson);
-        int totpKey = Integer.parseInt(json.getString("totpKey"));
+    @PostMapping("/totp/validate")
+    public ResponseEntity<?> validateTotp(@RequestBody JSONObject requestJson) {
+        String email = requestJson.getString("email");
+        int totpKey = Integer.parseInt(requestJson.getString("totpKey"));
 
         boolean isValidTotp = userService.validateTotp(email, totpKey);
 
@@ -75,4 +72,10 @@ public class TOTPController {
         }
     }
 
+    @PostMapping("/tokens/validate")
+    public ResponseEntity<?> validateJwt(@RequestBody JSONObject requestJson) {
+        String token = requestJson.getString("token");
+        jwtUtil.validateToken(token);
+        return ResponseEntity.ok("JWT is valid.");
+    }
 }
