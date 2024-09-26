@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.UserDTO;
+import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.service.JwtUtil;
 import jakarta.validation.Valid;
 import org.json.JSONObject;
@@ -33,13 +35,12 @@ public class TOTPController {
     public @ResponseBody
     Map<String, Object> createUser(@RequestBody User user) throws Throwable {
         User savedUser = userService.createUser(user);
-        savedUser.setPassword("");  // Clear password for security
 
         String otpProtocol = userService.generateOTPProtocol(savedUser.getEmail());
         String qrCode = userService.generateQRCode(otpProtocol);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("user", savedUser);
+        response.put("user", savedUser.getEmail());
         response.put("qrCode", qrCode);
 
         return response;
@@ -47,16 +48,15 @@ public class TOTPController {
 
     @PostMapping("/users/authenticate")
     public ResponseEntity<?> login(@RequestBody User user) {
-        Optional<User> userOpt = userService.authenticate(user.getEmail(), user.getPassword());
-        return userOpt.isPresent()
-                ? ResponseEntity.ok("Login Successful")
-                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        userService.authenticate(user.getEmail(), user.getPassword());
+        return ResponseEntity.ok("Login Successful");
     }
 
     @PostMapping("/totp/validate")
-    public ResponseEntity<?> validateTotp(@RequestBody JSONObject requestJson) {
-        String email = requestJson.getString("email");
-        int totpKey = Integer.parseInt(requestJson.getString("totpKey"));
+    public ResponseEntity<?> validateTotp(@RequestBody String requestJson) throws UserNotFoundException {
+        JSONObject request = new JSONObject(requestJson);
+        String email = request.getString("email");
+        int totpKey = Integer.parseInt(request.getString("totpKey"));
 
         boolean isValidTotp = userService.validateTotp(email, totpKey);
 
@@ -73,8 +73,10 @@ public class TOTPController {
     }
 
     @PostMapping("/tokens/validate")
-    public ResponseEntity<?> validateJwt(@RequestBody JSONObject requestJson) {
-        String token = requestJson.getString("token");
+    public ResponseEntity<?> validateJwt(@RequestBody String requestJson) {
+        JSONObject request = new JSONObject(requestJson);
+        String token = request.getString("token");
+        System.out.println(token);
         jwtUtil.validateToken(token);
         return ResponseEntity.ok("JWT is valid.");
     }
