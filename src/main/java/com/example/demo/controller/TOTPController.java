@@ -40,7 +40,8 @@ public class TOTPController {
         String qrCode = userService.generateQRCode(otpProtocol);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("user", savedUser.getEmail());
+        UserDTO userDTO = new UserDTO(savedUser.getEmail());
+        response.put("user", userDTO);
         response.put("qrCode", qrCode);
 
         return response;
