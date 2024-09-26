@@ -24,10 +24,8 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private TOTPAuthenticator totpAuthenticator;
-
     @Autowired
     private Environment env;
     @Autowired

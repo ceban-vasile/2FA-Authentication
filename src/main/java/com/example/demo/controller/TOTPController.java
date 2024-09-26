@@ -26,7 +26,7 @@ public class TOTPController {
 
     public TOTPController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
-        this.jwtUtil =jwtUtil;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping(value = "/users")
