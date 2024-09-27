@@ -1,4 +1,4 @@
-package com.example.demo.security;
+package com.example.demo.service;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
@@ -19,7 +19,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @Component
-public class TOTPAuthenticator {
+public class TOTPManager {
 
     public boolean verifyCode(String secret, int code, int variance) throws InvalidKeyException, NoSuchAlgorithmException {
         long timeIndex = System.currentTimeMillis() / 1000 / 30;

@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import com.example.demo.exception.MissingTOTPKeyException;
 import com.example.demo.model.User;
-import com.example.demo.security.TOTPAuthenticator;
 import com.google.zxing.WriterException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +17,7 @@ import java.security.NoSuchAlgorithmException;
 @RequiredArgsConstructor
 public class TOTPService {
 
-    private final TOTPAuthenticator totpAuthenticator;
+    private final TOTPManager totpManager;
 
     @Value("${spring.application.name}")
     private String applicationName;
@@ -27,7 +26,7 @@ public class TOTPService {
     private int totpTimeStepSeconds;
 
     public String generateSecret() {
-        return totpAuthenticator.generateSecret();
+        return totpManager.generateSecret();
     }
 
     public String generateOTPProtocol(User user) {
@@ -40,7 +39,7 @@ public class TOTPService {
     }
 
     public String generateQRCode(String otpProtocol) throws IOException, WriterException {
-        return totpAuthenticator.generateQRCode(otpProtocol);
+        return totpManager.generateQRCode(otpProtocol);
     }
 
     public boolean validateTotp(User user, Integer totpKey) throws NoSuchAlgorithmException, InvalidKeyException {
@@ -48,7 +47,7 @@ public class TOTPService {
             throw new MissingTOTPKeyException("TOTP code is mandatory");
         }
 
-        if (!totpAuthenticator.verifyCode(user.getSecret(), totpKey, totpTimeStepSeconds)) {
+        if (!totpManager.verifyCode(user.getSecret(), totpKey, totpTimeStepSeconds)) {
             throw new BadCredentialsException("Invalid TOTP code");
         }
 

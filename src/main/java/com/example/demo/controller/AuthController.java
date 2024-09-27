@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.User;
-import com.example.demo.service.JwtUtil;
+import com.example.demo.service.JwtManager;
 import com.example.demo.service.UserService;
 import com.example.demo.service.TOTPService;
 import com.google.zxing.WriterException;
@@ -21,16 +21,16 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/2fa")
-public class TOTPController {
+public class AuthController {
 
     private final UserService userService;
     private final TOTPService totpService;
-    private final JwtUtil jwtUtil;
+    private final JwtManager jwtManager;
 
-    public TOTPController(UserService userService, TOTPService totpService, JwtUtil jwtUtil) {
+    public AuthController(UserService userService, TOTPService totpService, JwtManager jwtManager) {
         this.userService = userService;
         this.totpService = totpService;
-        this.jwtUtil = jwtUtil;
+        this.jwtManager = jwtManager;
     }
 
     @PostMapping("/users")
@@ -64,8 +64,8 @@ public class TOTPController {
         boolean isValidTotp = totpService.validateTotp(user, totpKey);
 
         if (isValidTotp) {
-            String accessToken = jwtUtil.generateAccessToken(email);
-            String refreshToken = jwtUtil.generateRefreshToken(email);
+            String accessToken = jwtManager.generateAccessToken(email);
+            String refreshToken = jwtManager.generateRefreshToken(email);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "2FA Verified");
             response.put("accessToken", accessToken);
@@ -81,7 +81,7 @@ public class TOTPController {
     public ResponseEntity<?> validateJwt(@RequestBody String requestJson) {
         JSONObject request = new JSONObject(requestJson);
         String token = request.getString("token");
-        jwtUtil.validateAccessToken(token);
+        jwtManager.validateAccessToken(token);
         return ResponseEntity.ok("JWT is valid.");
     }
 
@@ -90,7 +90,7 @@ public class TOTPController {
         JSONObject request = new JSONObject(requestJson);
         String refreshToken = request.getString("refreshToken");
 
-        String newAccessToken = jwtUtil.refreshAccessToken(refreshToken);
+        String newAccessToken = jwtManager.refreshAccessToken(refreshToken);
 
         Map<String, Object> response = new HashMap<>();
         response.put("accessToken", newAccessToken);

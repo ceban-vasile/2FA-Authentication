@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.*;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +15,7 @@ import java.util.Map;
 
 @Component
 @Slf4j
-public class JwtUtil {
+public class JwtManager {
 
     @Value("${jwt.access-token.secret}")
     private String accessSecretString;
