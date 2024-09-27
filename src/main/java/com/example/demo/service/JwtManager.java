@@ -52,21 +52,19 @@ public class JwtManager {
     }
 
     public void validateAccessToken(String authToken) {
-        Jwts.parser().setSigningKey(accessJwtSecret).parseClaimsJws(authToken);
+        Jwts.parserBuilder().setSigningKey(accessJwtSecret).build().parseClaimsJws(authToken);
     }
 
     public void validateRefreshToken(String authToken) {
-        Jwts.parser().setSigningKey(refreshJwtSecret).parseClaimsJws(authToken);
+        Jwts.parserBuilder().setSigningKey(refreshJwtSecret).build().parseClaimsJws(authToken);
     }
 
     public String generateAccessToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email, accessTokenExpiration, accessJwtSecret);
+        return createToken(new HashMap<>(), email, accessTokenExpiration, accessJwtSecret);
     }
 
     public String generateRefreshToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email, refreshTokenExpiration, refreshJwtSecret);
+        return createToken(new HashMap<>(), email, refreshTokenExpiration, refreshJwtSecret);
     }
 
     public String refreshAccessToken(String refreshToken) {
@@ -76,9 +74,9 @@ public class JwtManager {
     }
 
     public String getEmailFromRefreshToken(String refreshToken) {
-        // Extract email or subject from refresh token
-        return Jwts.parser()
+        return Jwts.parserBuilder()
                 .setSigningKey(refreshJwtSecret)
+                .build()
                 .parseClaimsJws(refreshToken)
                 .getBody()
                 .getSubject();

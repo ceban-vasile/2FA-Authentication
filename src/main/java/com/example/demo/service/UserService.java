@@ -19,20 +19,19 @@ public class UserService {
 
     @Transactional
     public User createUser(User user) {
+        user.setEmail(user.getEmail());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setSecret(totpService.generateSecret());
         return userRepository.save(user);
     }
 
     @Transactional(readOnly = true)
-    public User authenticateUser(String email, String password) throws UserNotFoundException {
+    public void authenticateUser(String email, String password) throws UserNotFoundException {
         User user = getUserByEmail(email);
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
-
-        return user;
     }
 
     @Transactional(readOnly = true)
