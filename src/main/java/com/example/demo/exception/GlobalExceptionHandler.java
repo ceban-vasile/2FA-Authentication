@@ -17,10 +17,10 @@ import java.security.NoSuchAlgorithmException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(SignatureException.class)
-    public ResponseEntity<String> handleSignatureException(SignatureException ex) {
-        log.error("Signature exception: {}", ex.getMessage(), ex);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT signature.");
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<String> handleJwtException(JwtException ex) {
+        log.error("JWT exception: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT: " + ex.getMessage());
     }
 
     @ExceptionHandler(MalformedJwtException.class)
