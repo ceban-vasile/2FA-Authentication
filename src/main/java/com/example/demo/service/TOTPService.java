@@ -42,7 +42,7 @@ public class TOTPService {
         return totpManager.generateQRCode(otpProtocol);
     }
 
-    public boolean validateTotp(User user, Integer totpKey) throws NoSuchAlgorithmException, InvalidKeyException {
+    public void validateTotp(User user, Integer totpKey) throws NoSuchAlgorithmException, InvalidKeyException {
         if (totpKey == null) {
             throw new MissingTOTPKeyException("TOTP code is mandatory");
         }
@@ -50,7 +50,5 @@ public class TOTPService {
         if (!totpManager.verifyCode(user.getSecret(), totpKey, totpTimeStepSeconds)) {
             throw new BadCredentialsException("Invalid TOTP code");
         }
-
-        return true;
     }
 }
