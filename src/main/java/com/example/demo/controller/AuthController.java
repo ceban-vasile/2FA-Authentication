@@ -12,6 +12,7 @@ import com.example.demo.service.TOTPService;
 import com.google.zxing.WriterException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,12 +35,6 @@ public class AuthController {
     private final TOTPService totpService;
     private final JwtManager jwtManager;
 
-    @GetMapping("/thef/{id}")
-    public ResponseEntity<HistoryDTO> getHistory(@PathVariable Long id) throws Exception {
-        return historyService.history(id)
-                .map(history -> ResponseEntity.ok(new HistoryDTO(history)))
-                .orElse(ResponseEntity.notFound().build());
-    }
     @PostMapping("/users/authenticate")
     public ResponseEntity<String> login(@RequestBody @Valid User user) throws UserNotFoundException {
         userService.authenticateUser(user.getEmail(), user.getPassword());
@@ -63,8 +59,8 @@ public class AuthController {
         String email = request.get("email");
         int totpKey = Integer.parseInt(request.get("totpKey"));
 
-//        User user = userService.getUserByEmail(email);
-//        totpService.validateTotp(user, totpKey);
+        User user = userService.getUserByEmail(email);
+        totpService.validateTotp(user, totpKey);
 
         String accessToken = jwtManager.generateAccessToken(email);
         String refreshToken = jwtManager.generateRefreshToken(email);
