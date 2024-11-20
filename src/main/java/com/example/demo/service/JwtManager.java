@@ -52,11 +52,19 @@ public class JwtManager {
     }
 
     public void validateAccessToken(String authToken) {
-        Jwts.parserBuilder().setSigningKey(accessJwtSecret).build().parseClaimsJws(authToken);
+        try {
+            Jwts.parserBuilder().setSigningKey(accessJwtSecret).build().parseClaimsJws(authToken);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid or expired access token", e);
+        }
     }
 
     public void validateRefreshToken(String authToken) {
-        Jwts.parserBuilder().setSigningKey(refreshJwtSecret).build().parseClaimsJws(authToken);
+        try {
+            Jwts.parserBuilder().setSigningKey(refreshJwtSecret).build().parseClaimsJws(authToken);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid or expired refresh token", e);
+        }
     }
 
     public String generateAccessToken(String email) {
