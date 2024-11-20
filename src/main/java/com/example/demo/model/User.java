@@ -23,4 +23,7 @@ public class User {
 
     @Column(nullable = false)
     private String secret;
+
+    @Column()
+    private String refreshToken;
 }
