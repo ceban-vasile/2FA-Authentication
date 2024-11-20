@@ -27,13 +27,13 @@ public class AuthController {
     private final TOTPService totpService;
     private final JwtManager jwtManager;
 
-    @PostMapping("/users/authenticate")
+    @PostMapping("/users/signin")
     public ResponseEntity<String> login(@RequestBody @Valid User user) throws UserNotFoundException {
         userService.authenticateUser(user.getEmail(), user.getPassword());
         return ResponseEntity.ok("Login Successful");
     }
 
-    @PostMapping("/users")
+    @PostMapping("/users/signup")
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody @Valid User user) throws IOException, WriterException {
         User savedUser = userService.createUser(user);
         String otpProtocol = totpService.generateOTPProtocol(savedUser);
@@ -43,6 +43,14 @@ public class AuthController {
                 "user", new UserDTO(savedUser.getEmail()),
                 "qrCode", qrCode
         ));
+    }
+
+    @PostMapping("/users/logout")
+    public ResponseEntity<String> logout(@RequestBody Map<String, String> request) throws UserNotFoundException {
+        String email = request.get("email");
+
+        userService.updateRefreshToken(email, null);
+        return ResponseEntity.ok("User logged out successfully.");
     }
 
     @PostMapping("/totp/validate")
@@ -57,7 +65,6 @@ public class AuthController {
         String refreshToken = jwtManager.generateRefreshToken(email);
 
         return ResponseEntity.ok(Map.of(
-                "message", "2FA Verified",
                 "accessToken", accessToken,
                 "refreshToken", refreshToken
         ));
