@@ -39,4 +39,11 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
+
+    @Transactional
+    public void updateRefreshToken(String email, String refreshToken) throws UserNotFoundException {
+        User user = getUserByEmail(email);
+        user.setRefreshToken(refreshToken);
+        userRepository.save(user);
+    }
 }
